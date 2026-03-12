@@ -149,6 +149,8 @@ record_variable_dependency(VarName, #tracker{} = Tracker) ->
             UpdatedDependencies = Dependencies#{StatefulId => UpdatedStatefulDependencies},
             Tracker#tracker{dependencies = UpdatedDependencies};
         {StatefulId, undefined} when is_binary(StatefulId) ->
+            Tracker;
+        {undefined, _} ->
             Tracker
     end.
 
