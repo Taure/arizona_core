@@ -11,8 +11,6 @@ jobs:
     uses: Taure/erlang-ci/.github/workflows/ci.yml@v1
     with:
       otp-version: '28'
-      enable-eunit: false
+      enable-eunit: true
       enable-ct: true
-      enable-xref: false
-      enable-dialyzer: false
-      enable-audit: false
+      enable-ex-doc: true
