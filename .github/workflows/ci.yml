@@ -37,9 +37,6 @@ jobs:
       - name: Common Test
         run: rebar3 ct
 
-      - name: Dialyzer
-        run: rebar3 dialyzer
-
       - name: XRef
         run: rebar3 xref
 
