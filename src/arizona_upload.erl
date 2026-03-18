@@ -39,6 +39,8 @@ handle_event(~"save", _Params, View) ->
     cancel_entry/3
 ]).
 
+-ignore_xref([validate_entry/3, put_chunk/4, cancel_entry/3]).
+
 -export_type([upload_config/0, upload_entry/0]).
 
 -nominal upload_config() :: #{
