@@ -42,6 +42,20 @@ the current HTML and `render_click/2-4`, `render_submit/3`, or
     stop/1
 ]).
 
+-ignore_xref([
+    mount/1,
+    mount/2,
+    render/1,
+    render_click/2,
+    render_click/4,
+    render_submit/3,
+    render_change/3,
+    broadcast/3,
+    send_info/2,
+    has_element/2,
+    stop/1
+]).
+
 -include("../include/arizona_test.hrl").
 
 -doc "Mount a view module with no mount argument.".

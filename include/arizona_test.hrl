@@ -4,8 +4,8 @@
 -record(ctx, {
     pid :: pid(),
     view :: arizona_view:view(),
-    hierarchical :: map(),
-    diff :: map(),
+    hierarchical :: arizona_hierarchical_dict:hierarchical_structure(),
+    diff :: arizona_differ:diff(),
     actions :: list()
 }).
 

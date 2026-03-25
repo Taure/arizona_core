@@ -33,6 +33,17 @@ operations sent as separate wire messages.
     clear_pending_ops/2
 ]).
 
+-ignore_xref([
+    stream/3,
+    stream_insert/3,
+    stream_insert/4,
+    stream_delete/3,
+    stream_reset/3,
+    get_stream/2,
+    get_pending_ops/2,
+    clear_pending_ops/2
+]).
+
 -export_type([stream_item/0, stream_op/0]).
 
 -nominal stream_item() :: {DomId :: binary(), Data :: map()}.

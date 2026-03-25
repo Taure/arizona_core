@@ -35,6 +35,8 @@ render(Bindings) ->
     cancel_async/2
 ]).
 
+-ignore_xref([assign_async/3, assign_async/4, render/3, cancel_async/2]).
+
 -export_type([async_status/0]).
 
 -nominal async_status() :: loading | {ok, term()} | {failed, term()}.
