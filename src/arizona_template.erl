@@ -77,10 +77,12 @@ be created at compile-time via parse transforms or at runtime.
 -export([render_list/3]).
 -export([render_list_template/2]).
 -export([render_list_template/3]).
+-export([render_list_runtime/3]).
 -export([render_map/2]).
 -export([render_map/3]).
 -export([render_map_template/2]).
 -export([render_map_template/3]).
+-export([render_map_runtime/3]).
 
 %% --------------------------------------------------------------------
 %% Ignore xref warnings
@@ -108,10 +110,12 @@ be created at compile-time via parse transforms or at runtime.
 -ignore_xref([render_list/3]).
 -ignore_xref([render_list_template/2]).
 -ignore_xref([render_list_template/3]).
+-ignore_xref([render_list_runtime/3]).
 -ignore_xref([render_map/2]).
 -ignore_xref([render_map/3]).
 -ignore_xref([render_map_template/2]).
 -ignore_xref([render_map_template/3]).
+-ignore_xref([render_map_runtime/3]).
 
 %% --------------------------------------------------------------------
 %% Types exports
@@ -818,6 +822,79 @@ render_list_template(#template{} = Template, List, Options) ->
         (hierarchical, ParentId, ElementIndex, View) ->
             arizona_hierarchical:hierarchical_list(Template, List, ParentId, ElementIndex, View)
     end.
+
+-doc ~"""
+Runtime list rendering for function references (fun render_row/1).
+
+Called when the parse transform detects an implicit_fun that cannot be
+compile-time optimized. Calls the function for each item at runtime.
+""".
+-spec render_list_runtime(ItemCallback, List, Options) -> Callback when
+    ItemCallback :: fun((Item) -> arizona_template:template()),
+    List :: [Item],
+    Item :: dynamic(),
+    Options :: render_options(),
+    Callback :: render_callback().
+render_list_runtime(ItemCallback, List, _Options) ->
+    %% Runtime fallback: call the function for each item independently,
+    %% render each template, and return a callback that concatenates results.
+    fun
+        (render, _ParentId, _ElementIndex, View) ->
+            HtmlParts = [render_single_item(ItemCallback(Item), View) || Item <- List],
+            {HtmlParts, View};
+        (diff, _ParentId, _ElementIndex, View) ->
+            %% For diffs, re-render everything (no incremental diffing for runtime lists)
+            HtmlParts = [render_single_item(ItemCallback(Item), View) || Item <- List],
+            {HtmlParts, View};
+        (hierarchical, _ParentId, _ElementIndex, View) ->
+            {[], View}
+    end.
+
+-spec render_map_runtime(ItemCallback, Map, Options) -> Callback when
+    ItemCallback :: fun(({Key, Value}) -> arizona_template:template()),
+    Map :: #{Key => Value},
+    Key :: dynamic(),
+    Value :: dynamic(),
+    Options :: render_options(),
+    Callback :: render_callback().
+render_map_runtime(ItemCallback, Map, _Options) ->
+    List = maps:to_list(Map),
+    fun
+        (render, _ParentId, _ElementIndex, View) ->
+            HtmlParts = [render_single_item(ItemCallback(Item), View) || Item <- List],
+            {HtmlParts, View};
+        (diff, _ParentId, _ElementIndex, View) ->
+            HtmlParts = [render_single_item(ItemCallback(Item), View) || Item <- List],
+            {HtmlParts, View};
+        (hierarchical, _ParentId, _ElementIndex, View) ->
+            {[], View}
+    end.
+
+render_single_item(#template{static = Static, dynamic = Dynamic, dynamic_sequence = Seq}, _View) ->
+    DynamicValues = [element(I, Dynamic) || I <- Seq],
+    RenderedDynamic = [case V of
+        F when is_function(F, 0) -> F();
+        F when is_function(F, 1) -> F(undefined);
+        V -> V
+    end || V <- DynamicValues],
+    zip_static_dynamic(Static, RenderedDynamic, []);
+render_single_item(Bin, _View) when is_binary(Bin) ->
+    Bin.
+
+zip_static_dynamic([], [], Acc) ->
+    iolist_to_binary(lists:reverse(Acc));
+zip_static_dynamic([S | SRest], [], Acc) ->
+    zip_static_dynamic(SRest, [], [S | Acc]);
+zip_static_dynamic([], [D | DRest], Acc) ->
+    zip_static_dynamic([], DRest, [to_binary(D) | Acc]);
+zip_static_dynamic([S | SRest], [D | DRest], Acc) ->
+    zip_static_dynamic(SRest, DRest, [to_binary(D), S | Acc]).
+
+to_binary(B) when is_binary(B) -> B;
+to_binary(I) when is_integer(I) -> integer_to_binary(I);
+to_binary(L) when is_list(L) -> iolist_to_binary(L);
+to_binary(T) -> iolist_to_binary(io_lib:format(~"~p", [T])).
+
 
 -spec render_map(ItemCallback, Map) -> Callback when
     ItemCallback :: fun((Item) -> arizona_template:template()),
