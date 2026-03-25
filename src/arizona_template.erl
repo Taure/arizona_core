@@ -872,11 +872,14 @@ render_map_runtime(ItemCallback, Map, _Options) ->
 
 render_single_item(#template{static = Static, dynamic = Dynamic, dynamic_sequence = Seq}, _View) ->
     DynamicValues = [element(I, Dynamic) || I <- Seq],
-    RenderedDynamic = [case V of
-        F when is_function(F, 0) -> F();
-        F when is_function(F, 1) -> F(undefined);
-        V -> V
-    end || V <- DynamicValues],
+    RenderedDynamic = [
+        case V of
+            F when is_function(F, 0) -> F();
+            F when is_function(F, 1) -> F(undefined);
+            V -> V
+        end
+     || V <- DynamicValues
+    ],
     zip_static_dynamic(Static, RenderedDynamic, []);
 render_single_item(Bin, _View) when is_binary(Bin) ->
     Bin.
@@ -894,7 +897,6 @@ to_binary(B) when is_binary(B) -> B;
 to_binary(I) when is_integer(I) -> integer_to_binary(I);
 to_binary(L) when is_list(L) -> iolist_to_binary(L);
 to_binary(T) -> iolist_to_binary(io_lib:format(~"~p", [T])).
-
 
 -spec render_map(ItemCallback, Map) -> Callback when
     ItemCallback :: fun((Item) -> arizona_template:template()),
